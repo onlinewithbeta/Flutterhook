@@ -3,6 +3,7 @@ import cors from "cors";
 
 const app = express();
 app.use(cors());
+app.use(express.json());
 app.disable("x-powered-by");
 
 const PORT = process.env.PORT || 2026;
@@ -14,7 +15,7 @@ app.get("/", (req, res) => {
     });
 });
 
-app.post("/flw-webhook", async (req, res) => {
+app.post("/flw", async (req, res) => {
 	const payload = req.body;
 	console.log(payload);
 	res.status(200).end();
