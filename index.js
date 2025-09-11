@@ -139,7 +139,7 @@ app.post("/flw", async (req, res) => {
     const payMent = req.body;
     try {
         console.log(payMent);
-        if (payMent.event === "charge.success") {
+        if (payMent.event === "charge.completed") {
             console.log("Starting");
 
             let gmail = payload.entity.first_name;
