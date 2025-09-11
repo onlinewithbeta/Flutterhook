@@ -7,11 +7,6 @@ app.use(cors());
 app.use(express.json());
 app.disable("x-powered-by");
 
-const cfg = {
-    DB_URL: process.env.DB_URL,
-    PORT: process.env.PORT
-};
-
 //mongoosesraet
 const UserSchema = new mongoose.Schema({
     gmail: { type: String, unique: true },
@@ -138,6 +133,14 @@ app.get("/", (req, res) => {
 app.post("/flw", async (req, res) => {
     const payload = req.body;
     try {
+        const secretHash = cfg.FLW_SECRET_HASH;
+        const signature = req.headers["verif-hash"];
+
+        if (!signature || signature !== secretHash) {
+            // This response is not from Flutterwave; discard
+            return res.status(401).end();
+        }
+
         console.log(payload);
         if (payload.event === "charge.completed") {
             console.log("Starting");
