@@ -7,6 +7,14 @@ app.use(cors());
 app.use(express.json());
 app.disable("x-powered-by");
 
+const cfg = {
+    DB_URL: process.env.DB_URL,
+    PORT: process.env.PORT,
+    FLW_SECRET_HASH: process.env.FLW_SECRET_HASH
+    
+    
+};
+
 //mongoosesraet
 const UserSchema = new mongoose.Schema({
     gmail: { type: String, unique: true },
@@ -150,6 +158,7 @@ app.post("/flw", async (req, res) => {
             let ref = "Ref_" + payload.data.id;
 
             await increaseTokens(gmail, amt, `Bought Tokens`, ref);
+            console.log(gmail, amt, ref);
         } else {
             //was not a successful Transactions
             console.log("err");
@@ -174,7 +183,6 @@ app.use("/", (req, res) => {
 });
 
 app.listen(cfg.PORT, async () => {
-    console.clear();
     await connectDB();
 
     console.log(`Server running on port http://localhost:${cfg.PORT}`);
