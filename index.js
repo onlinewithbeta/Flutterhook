@@ -90,7 +90,7 @@ async function increaseTokens(gmail, amount, notes, ref) {
             time: getTimeOnly()
         }; //This Transactions
 
-        user.details.Transactions[thisTransIndex] = {};
+        userTransactions.unshift(thisTrans);
 
         //Increase Tokens and save
         user.tokens += amount / 10;
@@ -171,8 +171,8 @@ app.use("/", (req, res) => {
 });
 
 app.listen(cfg.PORT, async () => {
- console.clear();
+    console.clear();
     await connectDB();
-    
+
     console.log(`Server running on port http://localhost:${cfg.PORT}`);
 });
