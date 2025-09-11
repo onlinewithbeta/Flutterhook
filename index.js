@@ -142,9 +142,9 @@ app.post("/flw", async (req, res) => {
         if (payMent.event === "charge.completed") {
             console.log("Starting");
 
-            let gmail = payload.entity.first_name;
-            let amt = Number(payload.amount);
-            let ref = payload.customer.flwRef;
+            let gmail = payload.meta_data.gmail;
+            let amt = Number(payload.data.amount);
+            let ref = payload.data.flwRef;
 
             await increaseTokens(gmail, amt, `Bought Tokens`, ref);
         } else {
@@ -154,7 +154,8 @@ app.post("/flw", async (req, res) => {
             console.log(req.body);
         }
     } catch (err) {
-        console.log("err");
+     console.log("err");
+        console.log(err);
 
         console.log(req.body);
     }
