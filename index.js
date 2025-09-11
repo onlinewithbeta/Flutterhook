@@ -144,7 +144,7 @@ app.post("/flw", async (req, res) => {
 
             let gmail = payload.meta_data.gmail;
             let amt = Number(payload.data.amount);
-            let ref = payload.data.flwRef;
+            let ref = "Ref_"+payload.data.id;
 
             await increaseTokens(gmail, amt, `Bought Tokens`, ref);
         } else {
