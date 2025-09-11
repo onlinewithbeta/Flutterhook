@@ -136,15 +136,15 @@ app.get("/", (req, res) => {
 });
 
 app.post("/flw", async (req, res) => {
-    const payMent = req.body;
+    const payload = req.body;
     try {
-        console.log(payMent);
-        if (payMent.event === "charge.completed") {
+        console.log(payload);
+        if (payload.event === "charge.completed") {
             console.log("Starting");
 
             let gmail = payload.meta_data.gmail;
             let amt = Number(payload.data.amount);
-            let ref = "Ref_"+payload.data.id;
+            let ref = "Ref_" + payload.data.id;
 
             await increaseTokens(gmail, amt, `Bought Tokens`, ref);
         } else {
@@ -154,7 +154,7 @@ app.post("/flw", async (req, res) => {
             console.log(req.body);
         }
     } catch (err) {
-     console.log("err");
+        console.log("err");
         console.log(err);
 
         console.log(req.body);
@@ -171,6 +171,8 @@ app.use("/", (req, res) => {
 });
 
 app.listen(cfg.PORT, async () => {
+ console.clear();
     await connectDB();
+    
     console.log(`Server running on port http://localhost:${cfg.PORT}`);
 });
