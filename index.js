@@ -11,8 +11,6 @@ const cfg = {
     DB_URL: process.env.DB_URL,
     PORT: process.env.PORT,
     FLW_SECRET_HASH: process.env.FLW_SECRET_HASH
-    
-    
 };
 
 //mongoosesraet
@@ -70,10 +68,22 @@ function getTimeOnly(locale = "en-US", options = {}) {
     }).format(new Date());
 }
 // Example output: "02:30:45 PM"
+function reFined(gmail) {
+    if (typeof gmail !== "string") {
+        throw new Error("Input must be a string");
+    }
+
+    // Remove spaces, tabs, and newlines, then convert to lowercase
+    return gmail
+        .replace(/\s+/g, "") // Remove all whitespace
+        .toLowerCase(); // Convert to lowercase
+}
 
 //Increase tokens
 async function increaseTokens(gmail, amount, notes, ref) {
     try {
+        gmail = reFined(gmail);
+
         let user = await PermiumUser.findOne({ gmail: gmail });
         if (!user) throw new Error(`User ${gmail} not found`);
 
