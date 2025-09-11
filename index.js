@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import cors from "cors";
 
 const app = express();
@@ -6,7 +7,126 @@ app.use(cors());
 app.use(express.json());
 app.disable("x-powered-by");
 
-const PORT = process.env.PORT || 2026;
+const cfg = {
+    DB_URL: process.env.DB_URL,
+    PORT: process.env.PORT
+};
+
+//mongoosesraet
+const UserSchema = new mongoose.Schema({
+    gmail: { type: String, unique: true },
+    phone: Number,
+    password: String,
+    mate: String,
+    faculty: String,
+    department: String,
+    tokens: { type: Number, default: 0 },
+    OTP: Number,
+    details: {
+        type: Object,
+        default: {
+            Transactions: Array
+        }
+    }
+});
+const PermiumUser = mongoose.model("PermiumUser", UserSchema);
+
+const tokenBuySchema = new mongoose.Schema({
+    gmail: String,
+    dept: String,
+
+    cost: Number,
+    bal: Number,
+
+    ref: String
+});
+const tokenBought = mongoose.model("tokenBought", tokenBuySchema);
+
+//connect to database
+async function connectDB() {
+    //DB_URL
+    await mongoose.connect(cfg.DB_URL).then(() => console.log("connected"));
+}
+
+function getDateOnly(locale = "en-US", options = {}) {
+    return new Intl.DateTimeFormat(locale, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        ...options
+    }).format(new Date());
+}
+// Example output: "November 15, 2023"
+
+function getTimeOnly(locale = "en-US", options = {}) {
+    return new Intl.DateTimeFormat(locale, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        ...options
+    }).format(new Date());
+}
+// Example output: "02:30:45 PM"
+
+//Increase tokens
+async function increaseTokens(gmail, amount, notes, ref) {
+    try {
+        let user = await PermiumUser.findOne({ gmail: gmail });
+        if (!user) throw new Error(`User ${gmail} not found`);
+
+        // Initialize details if not exists
+        if (!user.details) user.details = { Transactions: [] };
+        if (!user.details.Transactions) user.details.Transactions = [];
+
+        //The user Transactions
+        let userTransactions = user.details.Transactions;
+        let thisTrans = {
+            transId: ref,
+            status: "successful",
+            action: notes,
+            cost: amount,
+            balance: user.tokens + amount / 10,
+            date: getDateOnly(),
+            time: getTimeOnly()
+        }; //This Transactions
+
+        user.details.Transactions[thisTransIndex] = {};
+
+        //Increase Tokens and save
+        user.tokens += amount / 10;
+        user.markModified("details"); // Important for mixed types
+        await user.save();
+
+        //Save Funding in action not very neccessary
+        try {
+            await saveFunding(
+                user.gmail,
+                user.department,
+                amount,
+                user.tokens,
+                ref
+            );
+        } catch (err) {
+            console.log(`Failed to save ${err.message}`);
+        }
+
+        return user;
+    } catch (error) {
+        console.error(`Error in deductTokens for ${gmail}:`, error);
+        throw error;
+    }
+}
+//save Funding in action
+async function saveFunding(gmail, department, cost, tokens, ref) {
+    let fundAction = new tokenBought({
+        gmail: gmail,
+        dept: department,
+        cost: cost,
+        bal: tokens,
+        ref: ref
+    });
+    await fundAction.save();
+}
 
 app.get("/", (req, res) => {
     res.send({
@@ -16,11 +136,31 @@ app.get("/", (req, res) => {
 });
 
 app.post("/flw", async (req, res) => {
-	const payload = req.body;
-	console.log(payload);
-	res.status(200).end();
-});
+    const payMent = req.body;
+    try {
+        console.log(payMent);
+        if (payMent.event === "charge.success") {
+            console.log("Starting");
 
+            let gmail = payload.entity.first_name;
+            let amt = Number(payload.amount);
+            let ref = payload.customer.flwRef;
+
+            await increaseTokens(gmail, amt, `Bought Tokens`, ref);
+        } else {
+            //was not a successful Transactions
+            console.log("err");
+
+            console.log(req.body);
+        }
+    } catch (err) {
+        console.log("err");
+
+        console.log(req.body);
+    }
+
+    res.status(200).send("good");
+});
 
 app.use("/", (req, res) => {
     res.send({
@@ -29,6 +169,7 @@ app.use("/", (req, res) => {
     });
 });
 
-app.listen(PORT, async () => {
-    console.log(`Server running on port http://localhost:${PORT}`);
+app.listen(cfg.PORT, async () => {
+    await connectDB();
+    console.log(`Server running on port http://localhost:${cfg.PORT}`);
 });
