@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
+import Flutterwave from "flutterwave-node-v3";
 
 const app = express();
 app.use(cors());
@@ -10,8 +11,12 @@ app.disable("x-powered-by");
 const cfg = {
     DB_URL: process.env.DB_URL,
     PORT: process.env.PORT,
+    FLW_SECRET_KEY: process.env.FLW_SECRET_KEY,
+    FLW_PUBLIC_KEY: process.env.FLW_PUBLIC_KEY,
     FLW_SECRET_HASH: process.env.FLW_SECRET_HASH
 };
+
+const flw = new Flutterwave(cfg.FLW_PUBLIC_KEY, cfg.FLW_SECRET_KEY);
 
 //mongoosesraet
 const UserSchema = new mongoose.Schema({
@@ -159,7 +164,21 @@ app.post("/flw", async (req, res) => {
             return res.status(401).end();
         }
 
-        console.log(payload);
+        const existingEvent = await flw.Transaction.fetch({
+            tx_ref: payload.data.tx_ref
+        });
+        // n.b. the Transaction.fetch method is from the Node v3 library.
+
+        if (existingEvent.status === payload.status) {
+            // The status hasn't changed so it's a duplicate, discard
+            res.status(200).end();
+        }
+
+        // Record this event
+        await PaymentEvent.save(payload);
+
+        // Process PaymentEvent
+
         if (payload.event === "charge.completed") {
             console.log("Starting");
 
